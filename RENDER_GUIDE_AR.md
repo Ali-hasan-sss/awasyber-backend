@@ -22,6 +22,8 @@
 npm install && npm run build
 ```
 
+> **ملاحظة**: البناء يستخدم `tsc-alias` لحل مسارات `@/*` تلقائياً
+
 #### Start Command:
 
 ```bash

@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc-alias",
     "dev": "ts-node-dev --respawn --transpile-only --require tsconfig-paths/register src/index.ts",
     "start": "npm run seed:prod && node dist/index.js",
     "seed": "ts-node --transpile-only --require tsconfig-paths/register src/scripts/seedAdmin.ts",
@@ -27,6 +27,7 @@
     "morgan": "^1.10.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "tsc-alias": "^1.8.10",
     "zod": "^4.1.13"
   },
   "devDependencies": {
