@@ -26,3 +26,9 @@ export const loginWithCodeSchema = z.object({
     code: z.string().min(4),
   }),
 });
+
+export const loginWithCodeOnlySchema = z.object({
+  body: z.object({
+    code: z.string().min(4, "Login code is required"),
+  }),
+});

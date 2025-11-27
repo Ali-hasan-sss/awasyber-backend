@@ -75,3 +75,21 @@ export const loginWithCode = async (email: string, code: string) => {
   const token = generateToken(user);
   return { token, user };
 };
+
+// Login with code only (no email required)
+export const loginWithCodeOnly = async (code: string) => {
+  // Find user by rawLoginCode first (faster lookup)
+  const user = await User.findOne({ rawLoginCode: code });
+  if (!user || !user.loginCode) {
+    throw new ApiError(401, "Invalid login code");
+  }
+
+  // Verify the code matches the hashed version
+  const isValid = await bcrypt.compare(code, user.loginCode);
+  if (!isValid) {
+    throw new ApiError(401, "Invalid login code");
+  }
+
+  const token = generateToken(user);
+  return { token, user };
+};

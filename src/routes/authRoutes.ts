@@ -2,11 +2,13 @@ import { Router } from "express";
 import {
   loginAdminHandler,
   loginWithCodeHandler,
+  loginWithCodeOnlyHandler,
   registerAdminHandler,
 } from "@/controllers/authController";
 import {
   loginAdminSchema,
   loginWithCodeSchema,
+  loginWithCodeOnlySchema,
   registerAdminSchema,
 } from "@/schemas/authSchemas";
 import { validate } from "@/middleware/validate";
@@ -43,5 +45,18 @@ router.post("/login", validate(loginAdminSchema), loginAdminHandler);
  *     tags: [Auth]
  */
 router.post("/login-code", validate(loginWithCodeSchema), loginWithCodeHandler);
+
+/**
+ * @swagger
+ * /api/auth/login-code-only:
+ *   post:
+ *     summary: Login using only a code (no email required)
+ *     tags: [Auth]
+ */
+router.post(
+  "/login-code-only",
+  validate(loginWithCodeOnlySchema),
+  loginWithCodeOnlyHandler
+);
 
 export default router;

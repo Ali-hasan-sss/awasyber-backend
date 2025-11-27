@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import {
   loginAdmin,
   loginWithCode,
+  loginWithCodeOnly,
   registerAdmin,
 } from "@/services/authService";
 
@@ -62,6 +63,27 @@ export const loginWithCodeHandler = async (
       user: {
         id: user._id,
         name: user.name,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const loginWithCodeOnlyHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, user } = await loginWithCodeOnly(req.body.code);
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
         role: user.role,
       },
     });
