@@ -8,6 +8,8 @@ import authRoutes from "@/routes/authRoutes";
 import userRoutes from "@/routes/userRoutes";
 import { errorHandler } from "@/middleware/errorHandler";
 import { swaggerSpec } from "@/config/swagger";
+import quotationRoutes from "@/routes/quotationRoutes";
+import serviceRoutes from "@/routes/serviceRoutes";
 
 const app = express();
 
@@ -17,7 +19,7 @@ app.use(
     origin: env.corsOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-lang"],
   })
 );
 app.use(express.json());
@@ -25,6 +27,8 @@ app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/quotations", quotationRoutes);
+app.use("/api/services", serviceRoutes);
 
 app.use(
   "/docs",
