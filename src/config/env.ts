@@ -13,6 +13,7 @@ const env = {
   seedAdminPhone: process.env.SEED_ADMIN_PHONE || "+1000000000",
   seedAdminCompany: process.env.SEED_ADMIN_COMPANY || "AWA Cyber",
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD || "Admin123",
+  apiBaseUrl: process.env.API_BASE_URL || "http://localhost:4000",
 };
 
 export default env;
