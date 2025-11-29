@@ -17,7 +17,13 @@ import uploadRoutes from "@/routes/uploadRoutes";
 
 const app = express();
 
-app.use(helmet());
+// Configure helmet to allow cross-origin images
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(
   cors({
     origin: env.corsOrigins,
@@ -28,8 +34,32 @@ app.use(
 );
 app.use(morgan("dev"));
 
-// Serve static files from uploads directory
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// Serve static files from uploads directory with CORS headers
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    // Set CORS headers for all origins to allow cross-origin image loading
+    const origin = req.headers.origin;
+    if (origin && env.corsOrigins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  },
+  express.static(path.join(process.cwd(), "uploads"))
+);
 
 // Upload routes should be before express.json() to handle multipart/form-data
 app.use("/api/upload", uploadRoutes);
