@@ -4,6 +4,7 @@ export type ModificationPriority = "low" | "medium" | "high" | "critical";
 export type ModificationStatus =
   | "pending"
   | "accepted"
+  | "rejected"
   | "completed"
   | "needs_extra_payment";
 

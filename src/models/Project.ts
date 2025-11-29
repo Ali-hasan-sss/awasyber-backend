@@ -35,6 +35,8 @@ export interface IProject extends Document {
   progress: number; // 0-100
   progressType: "project" | "modification"; // نوع التقدم: للمشروع أو للتعديل المقبول
   activeModificationId?: mongoose.Types.ObjectId; // التعديل المقبول الذي يتم العمل عليه حالياً
+  whatsappGroupLink?: string;
+  portalCode?: string; // رمز الدخول للبورتال
   createdAt: Date;
   updatedAt: Date;
 }
@@ -98,6 +100,8 @@ const ProjectSchema = new Schema<IProject>(
       type: Schema.Types.ObjectId,
       ref: "Modification",
     },
+    whatsappGroupLink: { type: String },
+    portalCode: { type: String, unique: true, sparse: true },
   },
   {
     timestamps: true,
@@ -106,5 +110,6 @@ const ProjectSchema = new Schema<IProject>(
 
 ProjectSchema.index({ userId: 1 });
 ProjectSchema.index({ createdAt: -1 });
+ProjectSchema.index({ portalCode: 1 });
 
 export default mongoose.model<IProject>("Project", ProjectSchema);

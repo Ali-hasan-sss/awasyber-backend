@@ -277,3 +277,55 @@ export const deleteModification = async (id: string) => {
   await Modification.findByIdAndDelete(id);
   return modification;
 };
+
+// Generate portal code for project
+export const generatePortalCode = async (projectId: string) => {
+  const project = await Project.findById(projectId);
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  // Generate a unique 8-character code
+  const generateCode = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  let portalCode = generateCode();
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  // Ensure code is unique
+  while (attempts < maxAttempts) {
+    const existing = await Project.findOne({ portalCode });
+    if (!existing || existing._id.toString() === projectId) {
+      break;
+    }
+    portalCode = generateCode();
+    attempts++;
+  }
+
+  project.portalCode = portalCode;
+  await project.save();
+
+  return project;
+};
+
+// Get project by portal code (for client portal)
+export const getProjectByPortalCode = async (portalCode: string) => {
+  const project = await Project.findOne({ portalCode })
+    .populate("userId", "name email companyName")
+    .populate("payments")
+    .populate("modifications")
+    .lean();
+
+  if (!project) {
+    throw new Error("Invalid portal code");
+  }
+
+  return project;
+};

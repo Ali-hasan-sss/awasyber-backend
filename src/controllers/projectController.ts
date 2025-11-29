@@ -11,6 +11,8 @@ import {
   createModification,
   updateModification,
   deleteModification,
+  generatePortalCode,
+  getProjectByPortalCode,
 } from "@/services/projectService";
 
 // Project handlers
@@ -197,6 +199,45 @@ export const deleteModificationHandler = async (
     return res.status(400).json({
       success: false,
       message: error.message || "Failed to delete modification",
+    });
+  }
+};
+
+// Generate portal code for project
+export const generatePortalCodeHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const project = await generatePortalCode(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Portal code generated successfully",
+      data: { portalCode: project.portalCode },
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to generate portal code",
+    });
+  }
+};
+
+// Get project by portal code (public endpoint for client portal)
+export const getProjectByPortalCodeHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const project = await getProjectByPortalCode(req.params.code);
+    return res.status(200).json({
+      success: true,
+      data: project,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Invalid portal code",
     });
   }
 };

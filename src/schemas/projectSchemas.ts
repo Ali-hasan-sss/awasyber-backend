@@ -50,6 +50,24 @@ export const updatePaymentSchema = z.object({
   }),
 });
 
+export const deletePaymentSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, "Payment ID is required"),
+  }),
+});
+
+export const generatePortalCodeSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, "Project ID is required"),
+  }),
+});
+
+export const getProjectByPortalCodeSchema = z.object({
+  params: z.object({
+    code: z.string().min(1, "Portal code is required"),
+  }),
+});
+
 export const createModificationSchema = z.object({
   body: z.object({
     title: z.string().min(1, "Title is required"),
@@ -74,10 +92,22 @@ export const updateModificationSchema = z.object({
     description: z.string().min(1).optional(),
     priority: z.enum(["low", "medium", "high", "critical"]).optional(),
     status: z
-      .enum(["pending", "accepted", "completed", "needs_extra_payment"])
+      .enum([
+        "pending",
+        "accepted",
+        "rejected",
+        "completed",
+        "needs_extra_payment",
+      ])
       .optional(),
     extraPaymentAmount: z.number().min(0).optional(),
     costAccepted: z.boolean().optional(),
+  }),
+});
+
+export const deleteModificationSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, "Modification ID is required"),
   }),
 });
 
@@ -119,6 +149,7 @@ export const createProjectSchema = z.object({
       .optional(),
     progress: z.number().min(0).max(100).optional(),
     progressType: z.enum(["project", "modification"]).optional(),
+    whatsappGroupLink: z.string().url().optional(),
   }),
 });
 
@@ -151,6 +182,7 @@ export const updateProjectSchema = z.object({
     progress: z.number().min(0).max(100).optional(),
     progressType: z.enum(["project", "modification"]).optional(),
     activeModificationId: z.string().optional(),
+    whatsappGroupLink: z.string().url().optional(),
   }),
 });
 

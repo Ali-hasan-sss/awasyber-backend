@@ -8,8 +8,12 @@ import {
   deleteProjectSchema,
   createPaymentSchema,
   updatePaymentSchema,
+  deletePaymentSchema,
   createModificationSchema,
   updateModificationSchema,
+  deleteModificationSchema,
+  generatePortalCodeSchema,
+  getProjectByPortalCodeSchema,
 } from "@/schemas/projectSchemas";
 import {
   createProjectHandler,
@@ -23,7 +27,21 @@ import {
   createModificationHandler,
   updateModificationHandler,
   deleteModificationHandler,
+  generatePortalCodeHandler,
+  getProjectByPortalCodeHandler,
 } from "@/controllers/projectController";
+import {
+  createProjectFileHandler,
+  getProjectFilesHandler,
+  updateProjectFileHandler,
+  deleteProjectFileHandler,
+} from "@/controllers/projectFileController";
+import {
+  createProjectFileSchema,
+  updateProjectFileSchema,
+  deleteProjectFileSchema,
+  getProjectFilesSchema,
+} from "@/schemas/projectFileSchemas";
 
 const router = Router();
 
@@ -71,7 +89,7 @@ router.patch(
 router.delete(
   "/payments/:id",
   authenticate(true),
-  validate(updatePaymentSchema),
+  validate(deletePaymentSchema),
   deletePaymentHandler
 );
 
@@ -91,8 +109,49 @@ router.patch(
 router.delete(
   "/modifications/:id",
   authenticate(true),
-  validate(updateModificationSchema),
+  validate(deleteModificationSchema),
   deleteModificationHandler
+);
+
+// Project File routes
+router.post(
+  "/files",
+  authenticate(true),
+  validate(createProjectFileSchema),
+  createProjectFileHandler
+);
+router.get(
+  "/files/:projectId",
+  authenticate(true),
+  validate(getProjectFilesSchema),
+  getProjectFilesHandler
+);
+router.patch(
+  "/files/:id",
+  authenticate(true),
+  validate(updateProjectFileSchema),
+  updateProjectFileHandler
+);
+router.delete(
+  "/files/:id",
+  authenticate(true),
+  validate(deleteProjectFileSchema),
+  deleteProjectFileHandler
+);
+
+// Portal code routes
+router.post(
+  "/:id/generate-portal-code",
+  authenticate(true),
+  validate(generatePortalCodeSchema),
+  generatePortalCodeHandler
+);
+
+// Public route for client portal (no authentication required)
+router.get(
+  "/portal/:code",
+  validate(getProjectByPortalCodeSchema),
+  getProjectByPortalCodeHandler
 );
 
 export default router;
