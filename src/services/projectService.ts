@@ -7,6 +7,7 @@ export interface ProjectPhasePayload {
   title: { en: string; ar: string };
   description?: { en?: string; ar?: string };
   duration: number;
+  phaseNumber?: number;
   status?: "upcoming" | "in_progress" | "completed";
   progress?: number;
 }
@@ -21,6 +22,8 @@ export interface CreateProjectPayload {
   startDate?: string;
   progress?: number;
   progressType?: "project" | "modification";
+  projectUrl?: string;
+  employees?: string[]; // Array of employee user IDs
 }
 
 export interface UpdateProjectPayload {
@@ -33,6 +36,8 @@ export interface UpdateProjectPayload {
   progress?: number;
   progressType?: "project" | "modification";
   activeModificationId?: string;
+  projectUrl?: string;
+  employees?: string[]; // Array of employee user IDs
 }
 
 export const createProject = async (payload: CreateProjectPayload) => {
@@ -42,14 +47,29 @@ export const createProject = async (payload: CreateProjectPayload) => {
     startDate: payload.startDate ? new Date(payload.startDate) : undefined,
     progress: payload.progress || 0,
     progressType: payload.progressType || "project",
+    employees: payload.employees
+      ? payload.employees.map((id) => new Types.ObjectId(id))
+      : [],
   });
   return await project.save();
 };
 
 export const listProjects = async (
-  filters: { userId?: string; page?: number; limit?: number } = {}
+  filters: {
+    userId?: string;
+    page?: number;
+    limit?: number;
+    currentUserId?: string;
+    currentUserRole?: "admin" | "employee" | "client";
+  } = {}
 ) => {
-  const { userId, page = 1, limit = 10 } = filters;
+  const {
+    userId,
+    page = 1,
+    limit = 10,
+    currentUserId,
+    currentUserRole,
+  } = filters;
   const skip = (page - 1) * limit;
 
   const query: any = {};
@@ -57,8 +77,17 @@ export const listProjects = async (
     query.userId = new Types.ObjectId(userId);
   }
 
+  // If current user is an employee, only show projects they are assigned to
+  if (currentUserRole === "employee" && currentUserId) {
+    query.$or = [
+      { employees: new Types.ObjectId(currentUserId) },
+      // Employees can also see projects if they are the only employee (for backward compatibility)
+    ];
+  }
+
   const projects = await Project.find(query)
     .populate("userId", "name companyName email")
+    .populate("employees", "name email companyName role")
     .populate("payments")
     .populate("modifications")
     .populate("activeModificationId")
@@ -70,9 +99,14 @@ export const listProjects = async (
   return projects;
 };
 
-export const getProjectById = async (id: string) => {
+export const getProjectById = async (
+  id: string,
+  currentUserId?: string,
+  currentUserRole?: "admin" | "employee" | "client"
+) => {
   const project = await Project.findById(id)
     .populate("userId", "name companyName email")
+    .populate("employees", "name email companyName role")
     .populate("payments")
     .populate("modifications")
     .populate("activeModificationId")
@@ -82,13 +116,45 @@ export const getProjectById = async (id: string) => {
     throw new Error("Project not found");
   }
 
+  // Check access: admin can access all, employee can only access if assigned
+  if (currentUserRole === "employee" && currentUserId) {
+    const employeeIds =
+      project.employees?.map((emp: any) =>
+        typeof emp === "object" && emp !== null && "_id" in emp
+          ? emp._id.toString()
+          : emp.toString()
+      ) || [];
+    if (!employeeIds.includes(currentUserId)) {
+      throw new Error("Access denied: You are not assigned to this project");
+    }
+  }
+
   return project;
 };
 
 export const updateProject = async (
   id: string,
-  payload: UpdateProjectPayload
+  payload: UpdateProjectPayload,
+  currentUserId?: string,
+  currentUserRole?: "admin" | "employee" | "client"
 ) => {
+  // Check access before updating
+  if (currentUserRole === "employee" && currentUserId) {
+    const project = await Project.findById(id).populate("employees").lean();
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    const employeeIds =
+      project.employees?.map((emp: any) =>
+        typeof emp === "object" && emp !== null && "_id" in emp
+          ? emp._id.toString()
+          : emp.toString()
+      ) || [];
+    if (!employeeIds.includes(currentUserId)) {
+      throw new Error("Access denied: You are not assigned to this project");
+    }
+  }
+
   const updateData: any = { ...payload };
   if (payload.startDate) {
     updateData.startDate = new Date(payload.startDate);
@@ -96,6 +162,11 @@ export const updateProject = async (
   if (payload.activeModificationId) {
     updateData.activeModificationId = new Types.ObjectId(
       payload.activeModificationId
+    );
+  }
+  if (payload.employees) {
+    updateData.employees = payload.employees.map(
+      (id) => new Types.ObjectId(id)
     );
   }
 
@@ -204,6 +275,13 @@ export const deletePayment = async (id: string) => {
 };
 
 // Modification methods
+export interface ModificationFilePayload {
+  url: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number;
+}
+
 export interface CreateModificationPayload {
   title: string;
   description: string;
@@ -213,6 +291,7 @@ export interface CreateModificationPayload {
   status?: "pending" | "accepted" | "completed" | "needs_extra_payment";
   extraPaymentAmount?: number;
   costAccepted?: boolean;
+  attachedFiles?: ModificationFilePayload[];
 }
 
 export const createModification = async (

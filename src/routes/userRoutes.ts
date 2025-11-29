@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
   createUserHandler,
   deleteUserHandler,
-  generateLoginCodeHandler,
   getUserHandler,
   listUsersHandler,
   updateUserHandler,
@@ -42,11 +41,5 @@ router.get("/:id", validate(userIdParamSchema), getUserHandler);
 router.patch("/:id", validate(updateUserSchema), updateUserHandler);
 
 router.delete("/:id", validate(userIdParamSchema), deleteUserHandler);
-
-router.post(
-  "/:id/login-code",
-  validate(userIdParamSchema),
-  generateLoginCodeHandler
-);
 
 export default router;

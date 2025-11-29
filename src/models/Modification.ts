@@ -8,6 +8,13 @@ export type ModificationStatus =
   | "completed"
   | "needs_extra_payment";
 
+export interface IModificationFile {
+  url: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number;
+}
+
 export interface IModification extends Document {
   title: string;
   description: string;
@@ -17,6 +24,7 @@ export interface IModification extends Document {
   status: ModificationStatus;
   extraPaymentAmount?: number;
   costAccepted: boolean;
+  attachedFiles?: IModificationFile[]; // الملفات المرفقة (حتى 5 ملفات)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,11 +50,19 @@ const ModificationSchema = new Schema<IModification>(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "completed", "needs_extra_payment"],
+      enum: ["pending", "accepted", "rejected", "completed", "needs_extra_payment"],
       default: "pending",
     },
     extraPaymentAmount: { type: Number, min: 0 },
     costAccepted: { type: Boolean, default: false },
+    attachedFiles: [
+      {
+        url: { type: String, required: true },
+        fileName: { type: String, required: true },
+        fileType: { type: String, required: true },
+        fileSize: { type: Number },
+      },
+    ],
   },
   {
     timestamps: true,

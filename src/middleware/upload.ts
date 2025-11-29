@@ -44,6 +44,11 @@ const fileFilter = (
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/plain",
     "text/csv",
+    // Archives
+    "application/zip",
+    "application/x-zip-compressed",
+    // Additional document types
+    "application/octet-stream", // For files that might not have a specific MIME type
   ];
 
   if (allowedMimes.includes(file.mimetype)) {

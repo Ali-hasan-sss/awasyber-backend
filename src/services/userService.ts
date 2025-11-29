@@ -9,6 +9,7 @@ interface CreateUserDTO {
   phone: string;
   companyName: string;
   role?: UserRole;
+  password?: string; // Required for employee role
 }
 
 export const createUser = async (payload: CreateUserDTO) => {
@@ -19,42 +20,57 @@ export const createUser = async (payload: CreateUserDTO) => {
     throw new ApiError(400, "Email or phone already exists");
   }
 
-  // Generate unique login code for new user (format: awa + 6 digits)
+  // For employee role, password is required
+  if (payload.role === "employee" && !payload.password) {
+    throw new ApiError(400, "Password is required for employee role");
+  }
+
+  // Hash password if provided
+  let hashedPassword: string | undefined = undefined;
+  if (payload.password) {
+    hashedPassword = await bcrypt.hash(payload.password, 12);
+  }
+
+  // Only generate login code for client role (not for employee or admin)
   let rawCode: string | undefined = undefined;
-  let codeExists = true;
-  let attempts = 0;
-  const maxAttempts = 100;
+  let hashedCode: string | undefined = undefined;
 
-  // Ensure the code is unique
-  while (codeExists && attempts < maxAttempts) {
-    rawCode = generateLoginCode();
-    const existingUser = await User.findOne({ rawLoginCode: rawCode });
-    if (!existingUser) {
-      codeExists = false;
+  if (payload.role === "client" || !payload.role) {
+    let codeExists = true;
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    // Ensure the code is unique
+    while (codeExists && attempts < maxAttempts) {
+      rawCode = generateLoginCode();
+      const existingUser = await User.findOne({ rawLoginCode: rawCode });
+      if (!existingUser) {
+        codeExists = false;
+      }
+      attempts++;
     }
-    attempts++;
-  }
 
-  if (codeExists || !rawCode) {
-    throw new ApiError(500, "Failed to generate unique login code");
-  }
+    if (codeExists || !rawCode) {
+      throw new ApiError(500, "Failed to generate unique login code");
+    }
 
-  // At this point, TypeScript knows rawCode is defined
-  const hashedCode = await bcrypt.hash(rawCode, 10);
+    hashedCode = await bcrypt.hash(rawCode, 10);
+  }
 
   const user = await User.create({
     ...payload,
     role: payload.role || "client",
+    password: hashedPassword,
     loginCode: hashedCode,
-    rawLoginCode: rawCode, // Store raw code for display
+    rawLoginCode: rawCode,
   });
 
-  // Return user with the raw login code
+  // Return user
   const userObj = user.toObject();
   return {
     ...userObj,
-    loginCode: rawCode, // Return the raw code for display
-    hasLoginCode: true, // Always true for newly created users
+    loginCode: rawCode, // Return the raw code for display (only for clients)
+    hasLoginCode: !!hashedCode, // Only true if login code was generated
   };
 };
 
@@ -62,7 +78,7 @@ export const listUsers = async (options?: {
   page?: number;
   limit?: number;
   search?: string;
-  role?: "admin" | "client";
+  role?: "admin" | "client" | "employee";
 }) => {
   const page = options?.page || 1;
   const limit = options?.limit || 10;
@@ -151,6 +167,12 @@ export const updateUser = async (
     if (phoneExists) {
       throw new ApiError(400, "Phone already in use");
     }
+  }
+
+  // Hash password if provided
+  if (payload.password) {
+    const hashedPassword = await bcrypt.hash(payload.password, 12);
+    payload.password = hashedPassword;
   }
 
   Object.assign(user, payload);

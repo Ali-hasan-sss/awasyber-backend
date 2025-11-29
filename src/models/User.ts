@@ -1,6 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 
-export type UserRole = "admin" | "client";
+export type UserRole = "admin" | "client" | "employee";
 
 export interface IUser extends Document {
   name: string;
@@ -9,8 +9,8 @@ export interface IUser extends Document {
   companyName: string;
   role: UserRole;
   password?: string;
-  loginCode?: string; // Hashed login code
-  rawLoginCode?: string; // Raw login code for display (e.g., awa123456)
+  loginCode?: string; // Hashed login code (deprecated - only for old clients)
+  rawLoginCode?: string; // Raw login code for display (deprecated)
 }
 
 const userSchema = new Schema<IUser>(
@@ -19,10 +19,14 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true, unique: true },
     companyName: { type: String, required: true },
-    role: { type: String, enum: ["admin", "client"], default: "client" },
+    role: {
+      type: String,
+      enum: ["admin", "client", "employee"],
+      default: "client",
+    },
     password: { type: String },
-    loginCode: { type: String }, // Hashed login code
-    rawLoginCode: { type: String }, // Raw login code for display
+    loginCode: { type: String }, // Hashed login code (deprecated)
+    rawLoginCode: { type: String }, // Raw login code for display (deprecated)
   },
   { timestamps: true }
 );

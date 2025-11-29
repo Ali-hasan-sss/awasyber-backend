@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { authenticate } from "@/middleware/authMiddleware";
+import {
+  authenticate,
+  optionalAuthenticate,
+} from "@/middleware/authMiddleware";
 import { validate } from "@/middleware/validate";
 import {
   createProjectSchema,
@@ -53,9 +56,10 @@ router.post(
   createProjectHandler
 );
 router.get("/", authenticate(true), listProjectsHandler);
+// Allow clients to get project by ID (for portal access)
 router.get(
   "/:id",
-  authenticate(true),
+  optionalAuthenticate,
   validate(getProjectSchema),
   getProjectByIdHandler
 );
@@ -94,9 +98,10 @@ router.delete(
 );
 
 // Modification routes
+// Allow clients to create modifications (optional authentication for portal code access)
 router.post(
   "/modifications",
-  authenticate(true),
+  optionalAuthenticate,
   validate(createModificationSchema),
   createModificationHandler
 );
@@ -114,15 +119,17 @@ router.delete(
 );
 
 // Project File routes
+// Allow clients to upload files (optional authentication for portal code access)
 router.post(
   "/files",
-  authenticate(true),
+  optionalAuthenticate,
   validate(createProjectFileSchema),
   createProjectFileHandler
 );
+// Allow clients to get project files (optional authentication for portal code access)
 router.get(
   "/files/:projectId",
-  authenticate(true),
+  optionalAuthenticate,
   validate(getProjectFilesSchema),
   getProjectFilesHandler
 );

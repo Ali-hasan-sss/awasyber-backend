@@ -4,9 +4,21 @@ import {
   uploadFile,
   uploadMultipleFiles,
 } from "@/controllers/uploadController";
-import { authenticate } from "@/middleware/authMiddleware";
+import {
+  authenticate,
+  optionalAuthenticate,
+} from "@/middleware/authMiddleware";
 
 const router = Router();
+
+// Single file upload for clients (optional authentication - allows portal code access)
+router.post(
+  "/",
+  optionalAuthenticate,
+  upload.single("file"),
+  handleMulterError,
+  uploadFile
+);
 
 // Single file upload (authenticated - admin only)
 router.post(

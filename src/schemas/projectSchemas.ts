@@ -68,18 +68,29 @@ export const getProjectByPortalCodeSchema = z.object({
   }),
 });
 
+const modificationFileSchema = z.object({
+  url: z.string().url("Invalid file URL"),
+  fileName: z.string().min(1, "File name is required"),
+  fileType: z.string().min(1, "File type is required"),
+  fileSize: z.number().min(0).optional(),
+});
+
 export const createModificationSchema = z.object({
   body: z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().min(1, "Description is required"),
     priority: z.enum(["low", "medium", "high", "critical"]).optional(),
     projectId: z.string().min(1, "Project ID is required"),
-    userId: z.string().min(1, "User ID is required"),
+    userId: z.string().optional(), // Optional - will be set from authenticated user or project
     status: z
       .enum(["pending", "accepted", "completed", "needs_extra_payment"])
       .optional(),
     extraPaymentAmount: z.number().min(0).optional(),
     costAccepted: z.boolean().optional(),
+    attachedFiles: z
+      .array(modificationFileSchema)
+      .max(5, "Maximum 5 files allowed")
+      .optional(),
   }),
 });
 
@@ -102,6 +113,10 @@ export const updateModificationSchema = z.object({
       .optional(),
     extraPaymentAmount: z.number().min(0).optional(),
     costAccepted: z.boolean().optional(),
+    attachedFiles: z
+      .array(modificationFileSchema)
+      .max(5, "Maximum 5 files allowed")
+      .optional(),
   }),
 });
 
@@ -123,6 +138,7 @@ const phaseSchema = z.object({
     })
     .optional(),
   duration: z.number().min(0, "Duration must be positive"),
+  phaseNumber: z.number().min(1).max(5).optional(),
   status: z.enum(["upcoming", "in_progress", "completed"]).optional(),
   progress: z.number().min(0).max(100).optional(),
 });
@@ -150,6 +166,8 @@ export const createProjectSchema = z.object({
     progress: z.number().min(0).max(100).optional(),
     progressType: z.enum(["project", "modification"]).optional(),
     whatsappGroupLink: z.string().url().optional(),
+    projectUrl: z.string().url().optional(),
+    employees: z.array(z.string().min(1)).optional(), // Array of employee user IDs
   }),
 });
 
@@ -183,6 +201,8 @@ export const updateProjectSchema = z.object({
     progressType: z.enum(["project", "modification"]).optional(),
     activeModificationId: z.string().optional(),
     whatsappGroupLink: z.string().url().optional(),
+    projectUrl: z.string().url().optional(),
+    employees: z.array(z.string().min(1)).optional(), // Array of employee user IDs
   }),
 });
 

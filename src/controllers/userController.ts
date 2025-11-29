@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import {
   createUser,
   deleteUser,
-  generateUserLoginCode,
   getUserById,
   listUsers,
   updateUser,
@@ -30,7 +29,7 @@ export const listUsersHandler = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string | undefined;
-    const role = req.query.role as "admin" | "client" | undefined;
+    const role = req.query.role as "admin" | "client" | "employee" | undefined;
 
     const result = await listUsers({ page, limit, search, role });
     res.json(result);
@@ -73,19 +72,6 @@ export const deleteUserHandler = async (
   try {
     await deleteUser(req.params.id);
     res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const generateLoginCodeHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const result = await generateUserLoginCode(req.params.id);
-    res.json(result);
   } catch (error) {
     next(error);
   }

@@ -46,19 +46,23 @@ export const registerAdmin = async (params: {
 };
 
 export const loginAdmin = async (email: string, password: string) => {
-  const admin = await User.findOne({ email, role: "admin" });
-  if (!admin || !admin.password) {
+  // Allow both admin and employee roles to login
+  const user = await User.findOne({
+    email,
+    role: { $in: ["admin", "employee"] },
+  });
+  if (!user || !user.password) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const isValid = await bcrypt.compare(password, admin.password);
+  const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const token = generateToken(admin);
+  const token = generateToken(user);
 
-  return { token, admin };
+  return { token, admin: user };
 };
 
 export const loginWithCode = async (email: string, code: string) => {

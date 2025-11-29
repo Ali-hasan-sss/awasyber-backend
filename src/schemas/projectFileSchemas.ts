@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createProjectFileSchema = z.object({
   body: z.object({
     projectId: z.string().min(1, "Project ID is required"),
-    userId: z.string().min(1, "User ID is required"),
+    userId: z.string().optional(), // Optional - will be set from authenticated user or project
     fileUrl: z.string().url("Invalid file URL"),
     fileName: z.string().min(1, "File name is required"),
     fileType: z.string().min(1, "File type is required"),
