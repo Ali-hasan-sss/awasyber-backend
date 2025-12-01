@@ -1,6 +1,7 @@
 import Project, { IProject } from "@/models/Project";
 import Payment from "@/models/Payment";
 import Modification from "@/models/Modification";
+import { User } from "@/models/User";
 import { Types } from "mongoose";
 
 export interface ProjectPhasePayload {
@@ -59,6 +60,7 @@ export const listProjects = async (
     userId?: string;
     page?: number;
     limit?: number;
+    search?: string;
     currentUserId?: string;
     currentUserRole?: "admin" | "employee" | "client";
   } = {}
@@ -67,6 +69,7 @@ export const listProjects = async (
     userId,
     page = 1,
     limit = 10,
+    search,
     currentUserId,
     currentUserRole,
   } = filters;
@@ -79,24 +82,64 @@ export const listProjects = async (
 
   // If current user is an employee, only show projects they are assigned to
   if (currentUserRole === "employee" && currentUserId) {
-    query.$or = [
-      { employees: new Types.ObjectId(currentUserId) },
-      // Employees can also see projects if they are the only employee (for backward compatibility)
-    ];
+    query.employees = new Types.ObjectId(currentUserId);
   }
 
-  const projects = await Project.find(query)
-    .populate("userId", "name companyName email")
+  // Search functionality - search by project name (will filter by client name after population)
+  if (search && search.trim()) {
+    const searchRegex = new RegExp(search.trim(), "i");
+    query.$or = [{ "name.en": searchRegex }, { "name.ar": searchRegex }];
+  }
+
+  // Build the query
+  const projectsQuery = Project.find(query)
+    .populate("userId", "name companyName email phone")
     .populate("employees", "name email companyName role")
     .populate("payments")
     .populate("modifications")
     .populate("activeModificationId")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+    .sort({ createdAt: -1 });
 
-  return projects;
+  // If search is provided, also filter by client name after population
+  let projects = await projectsQuery.lean();
+
+  // Filter by client name if search is provided (after population)
+  if (search && search.trim()) {
+    const searchLower = search.trim().toLowerCase();
+    projects = projects.filter((project: any) => {
+      const projectNameEn = project.name?.en?.toLowerCase() || "";
+      const projectNameAr = project.name?.ar?.toLowerCase() || "";
+      const clientName =
+        typeof project.userId === "object" && project.userId?.name
+          ? project.userId.name.toLowerCase()
+          : "";
+      const companyName =
+        typeof project.userId === "object" && project.userId?.companyName
+          ? project.userId.companyName.toLowerCase()
+          : "";
+
+      return (
+        projectNameEn.includes(searchLower) ||
+        projectNameAr.includes(searchLower) ||
+        clientName.includes(searchLower) ||
+        companyName.includes(searchLower)
+      );
+    });
+  }
+
+  // Get total count for pagination
+  const totalCount = projects.length;
+
+  // Apply pagination
+  const paginatedProjects = projects.slice(skip, skip + limit);
+
+  return {
+    projects: paginatedProjects,
+    totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
+  };
 };
 
 export const getProjectById = async (
@@ -105,7 +148,7 @@ export const getProjectById = async (
   currentUserRole?: "admin" | "employee" | "client"
 ) => {
   const project = await Project.findById(id)
-    .populate("userId", "name companyName email")
+    .populate("userId", "name companyName email phone")
     .populate("employees", "name email companyName role")
     .populate("payments")
     .populate("modifications")
@@ -173,7 +216,7 @@ export const updateProject = async (
   const project = await Project.findByIdAndUpdate(id, updateData, {
     new: true,
   })
-    .populate("userId", "name companyName email")
+    .populate("userId", "name companyName email phone")
     .populate("payments")
     .populate("modifications")
     .populate("activeModificationId")
@@ -274,6 +317,162 @@ export const deletePayment = async (id: string) => {
   return payment;
 };
 
+// Get all payments with filtering
+export const getAllPayments = async (
+  filters: {
+    projectId?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: "due" | "due_soon" | "paid" | "upcoming";
+    page?: number;
+    limit?: number;
+  } = {}
+) => {
+  const {
+    projectId,
+    startDate,
+    endDate,
+    status,
+    page = 1,
+    limit = 100,
+  } = filters;
+  const skip = (page - 1) * limit;
+
+  const query: any = {};
+
+  if (projectId) {
+    query.projectId = new Types.ObjectId(projectId);
+  }
+
+  if (startDate || endDate) {
+    query.dueDate = {};
+    if (startDate) {
+      query.dueDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      query.dueDate.$lte = new Date(endDate);
+    }
+  }
+
+  if (status) {
+    query.status = status;
+  }
+
+  const payments = await Payment.find(query)
+    .populate("projectId", "name logo")
+    .populate("userId", "name companyName")
+    .sort({ dueDate: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const totalCount = await Payment.countDocuments(query);
+
+  // Calculate statistics
+  const allPayments = await Payment.find(query).lean();
+
+  // Get incomes for the same date range
+  const Income = (await import("@/models/Income")).default;
+  const incomeQuery: any = {};
+  if (startDate || endDate) {
+    incomeQuery.dueDate = {};
+    if (startDate) {
+      incomeQuery.dueDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      incomeQuery.dueDate.$lte = new Date(endDate);
+    }
+  }
+  const allIncomes = await Income.find(incomeQuery).lean();
+
+  // Calculate total revenue from both payments and incomes
+  const paymentsRevenue = allPayments
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  // For recurring incomes (monthly contracts), count them for each month in the range
+  let incomesRevenue = 0;
+  if (startDate && endDate) {
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    allIncomes.forEach((income: any) => {
+      if (income.status === "paid") {
+        if (income.recurring && income.type === "monthly_contract") {
+          // Calculate how many months this income should be counted
+          const baseDate = new Date(income.dueDate);
+          const baseDay = baseDate.getDate();
+
+          let currentDate = new Date(startDateObj);
+          currentDate.setDate(baseDay);
+          if (currentDate.getDate() !== baseDay) {
+            currentDate = new Date(
+              currentDate.getFullYear(),
+              currentDate.getMonth() + 1,
+              0
+            );
+          }
+
+          let count = 0;
+          while (currentDate <= endDateObj) {
+            if (currentDate >= startDateObj) {
+              count++;
+            }
+            currentDate = new Date(
+              currentDate.getFullYear(),
+              currentDate.getMonth() + 1,
+              baseDay
+            );
+            if (currentDate.getDate() !== baseDay) {
+              currentDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth() + 1,
+                0
+              );
+            }
+          }
+          incomesRevenue += income.amount * count;
+        } else {
+          // One-time income
+          const incomeDate = new Date(income.dueDate);
+          if (incomeDate >= startDateObj && incomeDate <= endDateObj) {
+            incomesRevenue += income.amount;
+          }
+        }
+      }
+    });
+  } else {
+    // If no date range, just count paid incomes once
+    incomesRevenue = allIncomes
+      .filter((i: any) => i.status === "paid")
+      .reduce((sum, i: any) => sum + i.amount, 0);
+  }
+
+  const totalRevenue = paymentsRevenue + incomesRevenue;
+
+  const pendingAmount = allPayments
+    .filter((p) => p.status !== "paid")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const dueSoonCount = allPayments.filter(
+    (p) => p.status === "due_soon" || p.status === "due"
+  ).length;
+
+  return {
+    payments,
+    totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
+    statistics: {
+      totalRevenue,
+      pendingAmount,
+      dueSoonCount,
+      totalPayments: allPayments.length,
+      paidPayments: allPayments.filter((p) => p.status === "paid").length,
+    },
+  };
+};
+
 // Modification methods
 export interface ModificationFilePayload {
   url: string;
@@ -312,6 +511,50 @@ export const createModification = async (
   await Project.findByIdAndUpdate(payload.projectId, {
     $push: { modifications: savedModification._id },
   });
+
+  // Send notification to all admins about new modification
+  try {
+    const { sendNotificationToAllAdmins } = await import(
+      "@/utils/firebaseAdmin"
+    );
+
+    const [project, user] = await Promise.all([
+      Project.findById(payload.projectId).lean(),
+      User.findById(payload.userId).lean(),
+    ]);
+
+    const projectNameEn =
+      (project as any)?.name?.en || (project as any)?.name || "Project";
+    const projectNameAr =
+      (project as any)?.name?.ar || (project as any)?.name || "المشروع";
+
+    const clientName = (user as any)?.name || "";
+
+    const titleEn = "New Project Modification";
+    const titleAr = "تعديل جديد على المشروع";
+
+    const bodyEn = `${clientName} added a new modification for project ${projectNameEn}`;
+    const bodyAr = `${clientName} أضاف تعديلاً جديداً على المشروع ${projectNameAr}`;
+
+    await sendNotificationToAllAdmins(
+      `${titleEn} | ${titleAr}`,
+      `${bodyEn}\n${bodyAr}`,
+      {
+        type: "project_modification",
+        projectId: payload.projectId,
+        modificationId: savedModification._id.toString(),
+        projectNameEn,
+        projectNameAr,
+        clientName,
+      }
+    );
+  } catch (error) {
+    // لا نفشل إنشاء التعديل إذا فشل الإشعار
+    console.error(
+      "Failed to send notification for project modification:",
+      error
+    );
+  }
 
   return savedModification;
 };

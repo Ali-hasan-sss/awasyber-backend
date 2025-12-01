@@ -13,6 +13,9 @@ import quotationRoutes from "@/routes/quotationRoutes";
 import serviceRoutes from "@/routes/serviceRoutes";
 import portfolioRoutes from "@/routes/portfolioRoutes";
 import projectRoutes from "@/routes/projectRoutes";
+import expenseRoutes from "@/routes/expenseRoutes";
+import incomeRoutes from "@/routes/incomeRoutes";
+import notificationRoutes from "@/routes/notificationRoutes";
 import uploadRoutes from "@/routes/uploadRoutes";
 
 const app = express();
@@ -74,6 +77,9 @@ app.use("/api/quotations", quotationRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/portfolios", portfolioRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/incomes", incomeRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(
   "/docs",

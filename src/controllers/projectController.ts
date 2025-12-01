@@ -13,6 +13,7 @@ import {
   deleteModification,
   generatePortalCode,
   getProjectByPortalCode,
+  getAllPayments,
 } from "@/services/projectService";
 
 // Project handlers
@@ -34,23 +35,30 @@ export const createProjectHandler = async (req: Request, res: Response) => {
 
 export const listProjectsHandler = async (req: Request, res: Response) => {
   try {
-    const { userId, page, limit } = req.query;
+    const { userId, page, limit, search } = req.query;
     const currentUserId = req.user?.userId;
     const currentUserRole = req.user?.role as
       | "admin"
       | "employee"
       | "client"
       | undefined;
-    const projects = await listProjects({
+    const result = await listProjects({
       userId: userId as string | undefined,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      search: search as string | undefined,
       currentUserId,
       currentUserRole,
     });
     return res.status(200).json({
       success: true,
-      data: Array.isArray(projects) ? projects : [],
+      data: result.projects || [],
+      pagination: {
+        totalCount: result.totalCount || 0,
+        page: result.page || 1,
+        limit: result.limit || 10,
+        totalPages: result.totalPages || 0,
+      },
     });
   } catch (error: any) {
     return res.status(400).json({
@@ -328,6 +336,36 @@ export const generatePortalCodeHandler = async (
 };
 
 // Get project by portal code (public endpoint for client portal)
+export const getAllPaymentsHandler = async (req: Request, res: Response) => {
+  try {
+    const { projectId, startDate, endDate, status, page, limit } = req.query;
+    const result = await getAllPayments({
+      projectId: projectId as string | undefined,
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+      status: status as any,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+    return res.status(200).json({
+      success: true,
+      data: result.payments || [],
+      pagination: {
+        totalCount: result.totalCount || 0,
+        page: result.page || 1,
+        limit: result.limit || 100,
+        totalPages: result.totalPages || 0,
+      },
+      statistics: result.statistics,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to get payments",
+    });
+  }
+};
+
 export const getProjectByPortalCodeHandler = async (
   req: Request,
   res: Response

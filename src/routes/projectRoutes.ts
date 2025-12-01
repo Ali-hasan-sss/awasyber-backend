@@ -32,6 +32,7 @@ import {
   deleteModificationHandler,
   generatePortalCodeHandler,
   getProjectByPortalCodeHandler,
+  getAllPaymentsHandler,
 } from "@/controllers/projectController";
 import {
   createProjectFileHandler,
@@ -160,5 +161,8 @@ router.get(
   validate(getProjectByPortalCodeSchema),
   getProjectByPortalCodeHandler
 );
+
+// Get all payments (for revenue page)
+router.get("/payments/all", authenticate(true), getAllPaymentsHandler);
 
 export default router;
