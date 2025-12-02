@@ -121,7 +121,7 @@ const ProjectSchema = new Schema<IProject>(
 
 ProjectSchema.index({ userId: 1 });
 ProjectSchema.index({ createdAt: -1 });
-ProjectSchema.index({ portalCode: 1 });
+// portalCode index is automatically created by unique: true in schema definition
 ProjectSchema.index({ employees: 1 });
 
 export default mongoose.model<IProject>("Project", ProjectSchema);

@@ -17,6 +17,7 @@ import expenseRoutes from "@/routes/expenseRoutes";
 import incomeRoutes from "@/routes/incomeRoutes";
 import notificationRoutes from "@/routes/notificationRoutes";
 import uploadRoutes from "@/routes/uploadRoutes";
+import sectionRoutes from "@/routes/sectionRoutes";
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/incomes", incomeRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/sections", sectionRoutes);
 
 app.use(
   "/docs",
