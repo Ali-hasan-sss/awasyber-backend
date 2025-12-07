@@ -36,6 +36,14 @@ const fileFilter = (
     "image/gif",
     "image/webp",
     "image/svg+xml",
+    // Videos
+    "video/mp4",
+    "video/mpeg",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/webm",
+    "video/ogg",
+    "video/x-matroska",
     // Documents
     "application/pdf",
     "application/msword",
@@ -64,7 +72,7 @@ export const handleMulterError = (err: any, req: any, res: any, next: any) => {
     if (err.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
         success: false,
-        message: "File size too large. Maximum size is 10MB",
+        message: "File size too large. Maximum size is 50MB",
       });
     }
     if (err.code === "LIMIT_FILE_COUNT") {
@@ -92,6 +100,6 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max file size
+    fileSize: 50 * 1024 * 1024, // 50MB max file size (increased for videos)
   },
 });
