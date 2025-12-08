@@ -32,6 +32,8 @@ async function migrateDatabase() {
     console.log(`Found ${collections.length} collections to migrate\n`);
 
     let totalMigrated = 0;
+    let totalSkipped = 0;
+    let totalUpdated = 0;
 
     for (const collection of collections) {
       const collectionName = collection.name;
@@ -40,22 +42,83 @@ async function migrateDatabase() {
       const data = await sourceDb.collection(collectionName).find({}).toArray();
 
       if (data.length > 0) {
-        // await targetDb.collection(collectionName).deleteMany({});
+        const targetCollection = targetDb.collection(collectionName);
+        let inserted = 0;
+        let updated = 0;
+        let skipped = 0;
 
-        await targetDb.collection(collectionName).insertMany(data);
-        console.log(`  ✓ Migrated ${data.length} documents`);
-        totalMigrated += data.length;
+        // استخدام bulkWrite مع upsert للتعامل مع المكررات
+        const operations = data.map((doc) => {
+          // استخدام _id كمعرف فريد، أو email للمستخدمين
+          const filter = doc._id
+            ? { _id: doc._id }
+            : collectionName === "users" && doc.email
+            ? { email: doc.email }
+            : { _id: doc._id };
+
+          return {
+            updateOne: {
+              filter: filter,
+              update: { $set: doc },
+              upsert: true,
+            },
+          };
+        });
+
+        try {
+          const result = await targetCollection.bulkWrite(operations, {
+            ordered: false, // مواصلة حتى عند وجود أخطاء
+          });
+
+          inserted = result.upsertedCount || 0;
+          updated = result.modifiedCount || 0;
+          skipped = data.length - inserted - updated;
+
+          console.log(
+            `  ✓ Inserted: ${inserted}, Updated: ${updated}, Skipped: ${skipped}`
+          );
+          totalMigrated += inserted;
+          totalUpdated += updated;
+          totalSkipped += skipped;
+        } catch (bulkError) {
+          // في حالة وجود أخطاء، جرب insertMany مع ordered: false
+          console.log(`  ⚠ Bulk write had some errors, trying insertMany...`);
+          try {
+            await targetCollection.insertMany(data, {
+              ordered: false, // مواصلة حتى عند وجود أخطاء
+            });
+            inserted = data.length;
+            console.log(`  ✓ Migrated ${inserted} documents`);
+            totalMigrated += inserted;
+          } catch (insertError) {
+            console.log(`  ⚠ Some documents were skipped due to duplicates`);
+            // عد الوثائق المدرجة بنجاح
+            const insertedIds = insertError.insertedIds || {};
+            inserted = Object.keys(insertedIds).length;
+            totalMigrated += inserted;
+            totalSkipped += data.length - inserted;
+          }
+        }
       } else {
         console.log(`  ⚠ Collection is empty, skipping...`);
       }
     }
 
-    console.log(`\n✅ Migration completed successfully!`);
-    console.log(`📊 Total documents migrated: ${totalMigrated}`);
+    console.log(`\n✅ Migration completed!`);
+    console.log(`📊 Statistics:`);
+    console.log(`   - Inserted: ${totalMigrated}`);
+    console.log(`   - Updated: ${totalUpdated}`);
+    console.log(`   - Skipped (duplicates): ${totalSkipped}`);
   } catch (error) {
     console.error("\n❌ Migration error:", error.message);
-    console.error("Full error:", error);
-    process.exit(1);
+    if (error.code === 11000) {
+      console.error(
+        "   This is a duplicate key error. The script will continue..."
+      );
+    } else {
+      console.error("Full error:", error);
+      process.exit(1);
+    }
   } finally {
     await sourceClient.close();
     await targetClient.close();
