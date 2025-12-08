@@ -2,14 +2,18 @@ import { Request, Response } from "express";
 import env from "@/config/env";
 
 const getFileUrl = (req: Request, filename: string): string => {
-  // Use API_BASE_URL from env if available, otherwise construct from request
-  if (env.apiBaseUrl) {
-    return `${env.apiBaseUrl}/uploads/${filename}`;
+  // Always use the actual request to get the real server URL
+  // This ensures it works correctly on production server with proxy
+  const protocol = req.protocol || req.get("x-forwarded-proto") || "http";
+  const host = req.get("host") || req.get("x-forwarded-host");
+
+  // Only use API_BASE_URL if it's explicitly set and not localhost
+  if (env.apiBaseUrl && !env.apiBaseUrl.includes("localhost")) {
+    return `${env.apiBaseUrl}/api/uploads/${filename}`;
   }
-  // Fallback: construct from request
-  const protocol = req.protocol || "http";
-  const host = req.get("host") || `localhost:${env.port}`;
-  return `${protocol}://${host}/uploads/${filename}`;
+
+  // Use the actual request URL with /api/uploads path (works with proxy)
+  return `${protocol}://${host}/api/uploads/${filename}`;
 };
 
 export const uploadFile = async (req: Request, res: Response) => {

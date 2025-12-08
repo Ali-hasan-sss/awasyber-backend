@@ -41,7 +41,7 @@ app.use(morgan("dev"));
 
 // Serve static files from uploads directory with CORS headers
 app.use(
-  "/uploads",
+  "/api/uploads",
   (req, res, next) => {
     // Set CORS headers for all origins to allow cross-origin image loading
     const origin = req.headers.origin;
