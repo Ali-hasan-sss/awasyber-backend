@@ -23,6 +23,7 @@ export interface IPortfolio extends Document {
   }>;
   images: string[];
   completionDate: Date;
+  url?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,7 @@ const PortfolioSchema = new Schema<IPortfolio>(
     ],
     images: [{ type: String, required: true }],
     completionDate: { type: Date, required: true },
+    url: { type: String },
   },
   {
     timestamps: true,

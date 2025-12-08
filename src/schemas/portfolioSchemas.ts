@@ -32,6 +32,7 @@ export const createPortfolioSchema = z.object({
     completionDate: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "Invalid date value",
     }),
+    url: z.string().url().optional(),
   }),
 });
 
@@ -59,6 +60,7 @@ export const updatePortfolioSchema = z.object({
           message: "Invalid date value",
         })
         .optional(),
+      url: z.string().url().optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",

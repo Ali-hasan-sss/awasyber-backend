@@ -12,6 +12,7 @@ export interface CreatePortfolioPayload {
   }>;
   images: string[];
   completionDate: string;
+  url?: string;
 }
 
 export interface UpdatePortfolioPayload {
@@ -25,6 +26,7 @@ export interface UpdatePortfolioPayload {
   }>;
   images?: string[];
   completionDate?: string;
+  url?: string;
 }
 
 export const createPortfolio = async (payload: CreatePortfolioPayload) => {
