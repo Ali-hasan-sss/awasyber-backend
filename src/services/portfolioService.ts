@@ -42,20 +42,23 @@ export const listPortfolios = async (
   lang: string | undefined,
   filters: { serviceId?: string; page?: number; limit?: number } = {}
 ) => {
-  const { serviceId, page = 1, limit = 10 } = filters;
-  const skip = (page - 1) * limit;
-
+  const { serviceId, page, limit } = filters;
   const query: any = {};
   if (serviceId) {
     query.serviceId = new Types.ObjectId(serviceId);
   }
 
-  const portfolios = await Portfolio.find(query)
+  let queryBuilder = Portfolio.find(query)
     .populate("serviceId", "title")
-    .sort({ completionDate: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+    .sort({ completionDate: -1 });
+
+  // Apply pagination only if page and limit are provided
+  if (page && limit) {
+    const skip = (page - 1) * limit;
+    queryBuilder = queryBuilder.skip(skip).limit(limit);
+  }
+
+  const portfolios = await queryBuilder.lean();
 
   // Localize based on lang header
   if (lang && lang !== "NOT") {

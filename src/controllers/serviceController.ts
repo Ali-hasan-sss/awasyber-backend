@@ -112,7 +112,8 @@ export const getServiceHandler = async (
   next: NextFunction
 ) => {
   try {
-    const service = await getServiceById(req.params.id);
+    // جلب الخدمة مع الأقسام المرتبطة بها
+    const service = await getServiceById(req.params.id, true);
     const langHeader = getLangFromHeader(req);
     if (langHeader?.toUpperCase() === "NOT") {
       return res.json(service);

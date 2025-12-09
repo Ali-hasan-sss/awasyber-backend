@@ -11,6 +11,7 @@ export interface CreateSectionPayload {
     ar: string;
   };
   page: PageType;
+  serviceId?: string; // معرف الخدمة المرتبطة
   images?: string[];
   features?: IFeature[];
   order?: number;
@@ -27,6 +28,7 @@ export interface UpdateSectionPayload {
     ar?: string;
   };
   page?: PageType;
+  serviceId?: string; // معرف الخدمة المرتبطة
   images?: string[];
   features?: IFeature[];
   order?: number;
@@ -48,6 +50,7 @@ export const createSection = async (payload: CreateSectionPayload) => {
 export const listSections = async (
   filters: {
     page?: PageType;
+    serviceId?: string;
     isActive?: boolean;
   } = {}
 ) => {
@@ -55,6 +58,10 @@ export const listSections = async (
 
   if (filters.page) {
     query.page = filters.page;
+  }
+
+  if (filters.serviceId) {
+    query.serviceId = new Types.ObjectId(filters.serviceId);
   }
 
   if (filters.isActive !== undefined) {
@@ -133,6 +140,38 @@ export const getSectionsByPage = async (
 ) => {
   const sections = await Section.find({
     page,
+    isActive: true,
+  })
+    .sort({ order: 1, createdAt: -1 })
+    .lean();
+
+  // Format sections based on locale
+  return sections.map((section) => ({
+    _id: section._id,
+    title: section.title[locale],
+    description: section.description[locale],
+    page: section.page,
+    images: section.images || [],
+    features: section.features
+      .map((feature) => ({
+        name: feature.name[locale],
+        description: feature.description[locale],
+        icon: feature.icon,
+        order: feature.order,
+      }))
+      .sort((a, b) => a.order - b.order),
+    order: section.order,
+    createdAt: section.createdAt,
+    updatedAt: section.updatedAt,
+  }));
+};
+
+export const getSectionsByServiceId = async (
+  serviceId: string,
+  locale: "en" | "ar" = "en"
+) => {
+  const sections = await Section.find({
+    serviceId: new Types.ObjectId(serviceId),
     isActive: true,
   })
     .sort({ order: 1, createdAt: -1 })

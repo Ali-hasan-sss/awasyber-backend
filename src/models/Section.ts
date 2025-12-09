@@ -25,6 +25,7 @@ export interface ISection extends Document {
     ar: string; // HTML content
   };
   page: PageType; // الصفحة التي يظهر فيها القسم
+  serviceId?: mongoose.Types.ObjectId; // معرف الخدمة المرتبطة (اختياري)
   images: string[]; // مصفوفة الصور
   features: IFeature[]; // مصفوفة الميزات
   order: number; // ترتيب القسم ضمن الصفحة
@@ -64,6 +65,11 @@ const SectionSchema = new Schema<ISection>(
       enum: ["home", "about", "services", "contact", "portfolio"],
       required: true,
     },
+    serviceId: {
+      type: Schema.Types.ObjectId,
+      ref: "Service",
+      required: false,
+    },
     images: [{ type: String }],
     features: [FeatureSchema],
     order: { type: Number, default: 0 },
@@ -76,5 +82,6 @@ const SectionSchema = new Schema<ISection>(
 
 SectionSchema.index({ page: 1, order: 1 });
 SectionSchema.index({ isActive: 1 });
+SectionSchema.index({ serviceId: 1 }); // فهرس للبحث السريع عن الأقسام المرتبطة بخدمة
 
 export default mongoose.model<ISection>("Section", SectionSchema);
