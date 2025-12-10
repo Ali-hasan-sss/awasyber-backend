@@ -33,6 +33,7 @@ export const createPortfolioSchema = z.object({
       message: "Invalid date value",
     }),
     url: z.string().url().optional(),
+    youtubeUrl: z.string().url().optional().or(z.literal("")),
   }),
 });
 
@@ -61,6 +62,7 @@ export const updatePortfolioSchema = z.object({
         })
         .optional(),
       url: z.string().url().optional(),
+      youtubeUrl: z.string().url().optional().or(z.literal("")),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",

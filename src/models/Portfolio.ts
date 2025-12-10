@@ -24,6 +24,7 @@ export interface IPortfolio extends Document {
   images: string[];
   completionDate: Date;
   url?: string;
+  youtubeUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +60,7 @@ const PortfolioSchema = new Schema<IPortfolio>(
     images: [{ type: String, required: true }],
     completionDate: { type: Date, required: true },
     url: { type: String },
+    youtubeUrl: { type: String },
   },
   {
     timestamps: true,

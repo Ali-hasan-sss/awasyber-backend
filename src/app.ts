@@ -19,6 +19,7 @@ import notificationRoutes from "@/routes/notificationRoutes";
 import uploadRoutes from "@/routes/uploadRoutes";
 import sectionRoutes from "@/routes/sectionRoutes";
 import contactRoutes from "@/routes/contactRoutes";
+import articleRoutes from "@/routes/articleRoutes";
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use("/api/incomes", incomeRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/sections", sectionRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/articles", articleRoutes);
 
 app.use(
   "/docs",
