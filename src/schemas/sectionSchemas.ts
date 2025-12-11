@@ -28,6 +28,7 @@ export const createSectionSchema = z.object({
     features: z.array(featureSchema).optional().default([]),
     order: z.number().int().min(0).default(0),
     isActive: z.boolean().default(true),
+    selectedPortfolioId: z.string().optional(), // معرف العمل المحدد للعرض (اختياري)
   }),
 });
 
@@ -55,6 +56,7 @@ export const updateSectionSchema = z.object({
     features: z.array(featureSchema).optional(),
     order: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
+    selectedPortfolioId: z.string().optional(), // معرف العمل المحدد للعرض (اختياري)
   }),
 });
 

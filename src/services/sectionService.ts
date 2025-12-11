@@ -12,6 +12,7 @@ export interface CreateSectionPayload {
   };
   page: PageType;
   serviceId?: string; // معرف الخدمة المرتبطة
+  selectedPortfolioId?: string; // معرف العمل المحدد للعرض (اختياري)
   images?: string[];
   features?: IFeature[];
   order?: number;
@@ -29,6 +30,7 @@ export interface UpdateSectionPayload {
   };
   page?: PageType;
   serviceId?: string; // معرف الخدمة المرتبطة
+  selectedPortfolioId?: string; // معرف العمل المحدد للعرض (اختياري)
   images?: string[];
   features?: IFeature[];
   order?: number;
@@ -36,15 +38,31 @@ export interface UpdateSectionPayload {
 }
 
 export const createSection = async (payload: CreateSectionPayload) => {
-  const section = new Section({
+  const sectionData: any = {
     ...payload,
     images: payload.images || [],
     features: payload.features || [],
     order: payload.order || 0,
     isActive: payload.isActive !== undefined ? payload.isActive : true,
-  });
+  };
 
-  return await section.save();
+  // Handle selectedPortfolioId conversion to ObjectId if provided
+  if (payload.selectedPortfolioId) {
+    sectionData.selectedPortfolioId = new Types.ObjectId(
+      payload.selectedPortfolioId
+    );
+  }
+
+  const section = new Section(sectionData);
+  const savedSection = await section.save();
+
+  // Ensure selectedPortfolioId is included as string if present
+  return {
+    ...savedSection.toObject(),
+    selectedPortfolioId: savedSection.selectedPortfolioId
+      ? savedSection.selectedPortfolioId.toString()
+      : undefined,
+  };
 };
 
 export const listSections = async (
@@ -72,7 +90,13 @@ export const listSections = async (
     .sort({ page: 1, order: 1, createdAt: -1 })
     .lean();
 
-  return sections;
+  // Ensure selectedPortfolioId is included as string if present
+  return sections.map((section) => ({
+    ...section,
+    selectedPortfolioId: section.selectedPortfolioId
+      ? section.selectedPortfolioId.toString()
+      : undefined,
+  }));
 };
 
 export const getSectionById = async (id: string) => {
@@ -82,7 +106,13 @@ export const getSectionById = async (id: string) => {
     throw new Error("Section not found");
   }
 
-  return section;
+  // Ensure selectedPortfolioId is included as string if present
+  return {
+    ...section,
+    selectedPortfolioId: section.selectedPortfolioId
+      ? section.selectedPortfolioId.toString()
+      : undefined,
+  };
 };
 
 export const updateSection = async (
@@ -112,6 +142,32 @@ export const updateSection = async (
     }
   }
 
+  // Handle selectedPortfolioId conversion to ObjectId if provided
+  if (payload.selectedPortfolioId !== undefined) {
+    if (
+      payload.selectedPortfolioId &&
+      payload.selectedPortfolioId.trim() !== ""
+    ) {
+      updateData.selectedPortfolioId = new Types.ObjectId(
+        payload.selectedPortfolioId
+      );
+      // Remove $unset if it exists
+      if (updateData.$unset) {
+        delete updateData.$unset.selectedPortfolioId;
+        if (Object.keys(updateData.$unset).length === 0) {
+          delete updateData.$unset;
+        }
+      }
+    } else {
+      // If empty string or null, remove the field
+      if (!updateData.$unset) {
+        updateData.$unset = {};
+      }
+      updateData.$unset.selectedPortfolioId = "";
+      delete updateData.selectedPortfolioId;
+    }
+  }
+
   const section = await Section.findByIdAndUpdate(id, updateData, {
     new: true,
   }).lean();
@@ -120,7 +176,13 @@ export const updateSection = async (
     throw new Error("Section not found");
   }
 
-  return section;
+  // Ensure selectedPortfolioId is included as string if present
+  return {
+    ...section,
+    selectedPortfolioId: section.selectedPortfolioId
+      ? section.selectedPortfolioId.toString()
+      : undefined,
+  };
 };
 
 export const deleteSection = async (id: string) => {
@@ -161,6 +223,9 @@ export const getSectionsByPage = async (
       }))
       .sort((a, b) => a.order - b.order),
     order: section.order,
+    selectedPortfolioId: section.selectedPortfolioId
+      ? section.selectedPortfolioId.toString()
+      : undefined,
     createdAt: section.createdAt,
     updatedAt: section.updatedAt,
   }));

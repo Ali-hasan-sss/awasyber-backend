@@ -26,6 +26,7 @@ export interface ISection extends Document {
   };
   page: PageType; // الصفحة التي يظهر فيها القسم
   serviceId?: mongoose.Types.ObjectId; // معرف الخدمة المرتبطة (اختياري)
+  selectedPortfolioId?: mongoose.Types.ObjectId; // معرف العمل المحدد للعرض (اختياري)
   images: string[]; // مصفوفة الصور
   features: IFeature[]; // مصفوفة الميزات
   order: number; // ترتيب القسم ضمن الصفحة
@@ -68,6 +69,11 @@ const SectionSchema = new Schema<ISection>(
     serviceId: {
       type: Schema.Types.ObjectId,
       ref: "Service",
+      required: false,
+    },
+    selectedPortfolioId: {
+      type: Schema.Types.ObjectId,
+      ref: "Portfolio",
       required: false,
     },
     images: [{ type: String }],
