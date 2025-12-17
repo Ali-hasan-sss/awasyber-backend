@@ -13,22 +13,54 @@ export const createQuotationRequestSchema = z.object({
   body: z
     .object({
       fullName: z.string().min(3),
-      email: z.string().email(),
       phone: z.string().min(6),
-      companyName: z.string().min(2).optional(),
       serviceId: z.string().min(1),
-      projectDescription: z.string().min(10),
-      budget: budgetSchema.refine((data) => data.to >= data.from, {
-        message: "Budget 'to' must be greater than or equal to 'from'",
-      }),
-      expectedDuration: z.string().min(2),
-      startDate: dateString,
-      endDate: dateString,
-      additionalInfo: z.string().optional(),
+      // Optional fields - accept empty strings or valid values
+      email: z
+        .union([z.string().email(), z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      companyName: z
+        .union([z.string().min(2), z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      projectDescription: z
+        .union([z.string().min(10), z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      budget: budgetSchema
+        .refine((data) => data.to >= data.from, {
+          message: "Budget 'to' must be greater than or equal to 'from'",
+        })
+        .optional(),
+      expectedDuration: z
+        .union([z.string().min(2), z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      startDate: z
+        .union([dateString, z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      endDate: z
+        .union([dateString, z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
+      additionalInfo: z
+        .union([z.string(), z.literal("")])
+        .optional()
+        .transform((val) => (val === "" || !val ? undefined : val)),
     })
     .refine(
-      (data) =>
-        new Date(data.endDate).getTime() >= new Date(data.startDate).getTime(),
+      (data) => {
+        // Only validate date order if both dates are provided
+        if (data.startDate && data.endDate) {
+          return (
+            new Date(data.endDate).getTime() >=
+            new Date(data.startDate).getTime()
+          );
+        }
+        return true;
+      },
       { message: "End date must be after start date", path: ["endDate"] }
     ),
 });

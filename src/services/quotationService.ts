@@ -7,18 +7,19 @@ import {
 
 export interface CreateQuotationRequestDTO {
   fullName: string;
-  email: string;
   phone: string;
-  companyName?: string;
   serviceId: string;
-  projectDescription: string;
-  budget: {
+  // Optional fields
+  email?: string;
+  companyName?: string;
+  projectDescription?: string;
+  budget?: {
     from: number;
     to: number;
   };
-  expectedDuration: string;
-  startDate: string;
-  endDate: string;
+  expectedDuration?: string;
+  startDate?: string;
+  endDate?: string;
   additionalInfo?: string;
 }
 
@@ -33,17 +34,49 @@ export interface ListQuotationRequestOptions {
 export const createQuotationRequest = async (
   payload: CreateQuotationRequestDTO
 ) => {
-  const request = await QuotationRequest.create({
-    ...payload,
-    startDate: new Date(payload.startDate),
-    endDate: new Date(payload.endDate),
-  });
+  // Build the request object with only provided fields
+  const requestData: any = {
+    fullName: payload.fullName,
+    phone: payload.phone,
+    serviceId: payload.serviceId,
+  };
+
+  // Add optional fields only if provided
+  if (payload.email) {
+    requestData.email = payload.email;
+  }
+  if (payload.companyName) {
+    requestData.companyName = payload.companyName;
+  }
+  if (payload.projectDescription) {
+    requestData.projectDescription = payload.projectDescription;
+  }
+  if (payload.budget) {
+    requestData.budget = payload.budget;
+  }
+  if (payload.expectedDuration) {
+    requestData.expectedDuration = payload.expectedDuration;
+  }
+  if (payload.startDate) {
+    requestData.startDate = new Date(payload.startDate);
+  }
+  if (payload.endDate) {
+    requestData.endDate = new Date(payload.endDate);
+  }
+  if (payload.additionalInfo) {
+    requestData.additionalInfo = payload.additionalInfo;
+  }
+
+  const request = await QuotationRequest.create(requestData);
+
+  // Ensure request is a single document, not an array
+  const quotationDoc = Array.isArray(request) ? request[0] : request;
 
   // Send notification to all admins
   try {
     console.log(
       "Attempting to send notification for new quotation request:",
-      request._id
+      quotationDoc._id
     );
     const { sendNotificationToAllAdmins } = await import(
       "@/utils/firebaseAdmin"
@@ -71,7 +104,7 @@ export const createQuotationRequest = async (
       `${bodyEn}\n${bodyAr}`,
       {
         type: "quotation_request",
-        quotationId: request._id.toString(),
+        quotationId: quotationDoc._id.toString(),
         fullName: payload.fullName,
         email: payload.email,
         phone: payload.phone,
@@ -91,7 +124,7 @@ export const createQuotationRequest = async (
     );
   }
 
-  return request.toObject();
+  return quotationDoc.toObject();
 };
 
 export const listQuotationRequests = async (

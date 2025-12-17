@@ -9,15 +9,15 @@ export interface IBudgetRange {
 
 export interface IQuotationRequest extends Document {
   fullName: string;
-  email: string;
+  email?: string;
   phone: string;
   companyName?: string;
   serviceId: string;
-  projectDescription: string;
-  budget: IBudgetRange;
-  expectedDuration: string;
-  startDate: Date;
-  endDate: Date;
+  projectDescription?: string;
+  budget?: IBudgetRange;
+  expectedDuration?: string;
+  startDate?: Date;
+  endDate?: Date;
   additionalInfo?: string;
   status: QuotationStatus;
   createdAt: Date;
@@ -35,15 +35,15 @@ const BudgetSchema = new Schema<IBudgetRange>(
 const QuotationRequestSchema = new Schema<IQuotationRequest>(
   {
     fullName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, lowercase: true, trim: true },
+    email: { type: String, lowercase: true, trim: true },
     phone: { type: String, required: true, trim: true },
     companyName: { type: String, trim: true },
     serviceId: { type: String, required: true, trim: true },
-    projectDescription: { type: String, required: true },
-    budget: { type: BudgetSchema, required: true },
-    expectedDuration: { type: String, required: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
+    projectDescription: { type: String },
+    budget: { type: BudgetSchema },
+    expectedDuration: { type: String },
+    startDate: { type: Date },
+    endDate: { type: Date },
     additionalInfo: { type: String },
     status: {
       type: String,
@@ -63,4 +63,3 @@ export const QuotationRequest = model<IQuotationRequest>(
   "QuotationRequest",
   QuotationRequestSchema
 );
-
