@@ -115,6 +115,53 @@ export const createQuotationRequest = async (
       }
     );
     console.log("Notification result:", result);
+
+    // Send email notification to company email
+    try {
+      console.log("[QUOTATION] Starting email notification process...", {
+        quotationId: quotationDoc._id.toString(),
+        fullName: payload.fullName,
+      });
+
+      const { sendQuotationRequestEmail } = await import(
+        "@/utils/emailService"
+      );
+      const emailResult = await sendQuotationRequestEmail({
+        fullName: payload.fullName,
+        email: payload.email,
+        phone: payload.phone,
+        companyName: payload.companyName,
+        serviceName: serviceNameAr, // Use Arabic name for email
+        projectDescription: payload.projectDescription,
+        budget: payload.budget,
+        expectedDuration: payload.expectedDuration,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        additionalInfo: payload.additionalInfo,
+      });
+
+      if (emailResult.success) {
+        console.log("[QUOTATION] ✅ Email notification sent successfully", {
+          quotationId: quotationDoc._id.toString(),
+          messageId: emailResult.messageId,
+          fullName: payload.fullName,
+        });
+      } else {
+        console.error("[QUOTATION] ❌ Email notification failed", {
+          quotationId: quotationDoc._id.toString(),
+          error: emailResult.error,
+          fullName: payload.fullName,
+        });
+      }
+    } catch (emailError) {
+      // Don't fail the request if email fails
+      console.error("[QUOTATION] ❌ Error in email notification process:", {
+        quotationId: quotationDoc._id.toString(),
+        error:
+          emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+      });
+    }
   } catch (error) {
     // Don't fail the request if notification fails
     console.error("Error sending notification for quotation request:", error);

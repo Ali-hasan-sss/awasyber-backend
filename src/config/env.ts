@@ -14,6 +14,13 @@ const env = {
   seedAdminCompany: process.env.SEED_ADMIN_COMPANY || "AWA Cyber",
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD || "Admin123",
   apiBaseUrl: process.env.API_BASE_URL || "http://localhost:4000",
+  // Email configuration
+  emailHost: process.env.EMAIL_HOST || "smtp.gmail.com",
+  emailPort: Number(process.env.EMAIL_PORT) || 587,
+  emailUser: process.env.EMAIL_USER || "",
+  emailPassword: process.env.EMAIL_PASSWORD || "",
+  emailFrom: process.env.EMAIL_FROM || "info@awacyber.com",
+  companyEmail: process.env.COMPANY_EMAIL || "info@awacyber.com",
 };
 
 export default env;

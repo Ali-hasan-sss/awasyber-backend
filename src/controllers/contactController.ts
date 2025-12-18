@@ -42,6 +42,47 @@ export const createContactMessage = async (req: Request, res: Response) => {
 
     await Promise.all(notificationPromises);
 
+    // Send email notification to company email
+    try {
+      console.log("[CONTACT] Starting email notification process...", {
+        contactMessageId: contactMessage._id.toString(),
+        name,
+        email,
+      });
+
+      const { sendContactMessageEmail } = await import("@/utils/emailService");
+      const emailResult = await sendContactMessageEmail({
+        name,
+        email,
+        phone,
+        message,
+      });
+
+      if (emailResult.success) {
+        console.log("[CONTACT] ✅ Contact message email sent successfully", {
+          contactMessageId: contactMessage._id.toString(),
+          messageId: emailResult.messageId,
+          name,
+          email,
+        });
+      } else {
+        console.error("[CONTACT] ❌ Contact message email failed", {
+          contactMessageId: contactMessage._id.toString(),
+          error: emailResult.error,
+          name,
+          email,
+        });
+      }
+    } catch (emailError) {
+      // Don't fail the request if email fails
+      console.error("[CONTACT] ❌ Error in contact message email process:", {
+        contactMessageId: contactMessage._id.toString(),
+        error:
+          emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "Message sent successfully",
@@ -202,4 +243,3 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     });
   }
 };
-
