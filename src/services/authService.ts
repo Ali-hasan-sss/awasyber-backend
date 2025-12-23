@@ -97,3 +97,69 @@ export const loginWithCodeOnly = async (code: string) => {
   const token = generateToken(user);
   return { token, user };
 };
+
+export const updateProfile = async (
+  userId: string,
+  payload: { name?: string; email?: string; phone?: string }
+) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Check if email is being changed and if it's already in use
+  if (payload.email && payload.email !== user.email) {
+    const emailExists = await User.findOne({ email: payload.email });
+    if (emailExists) {
+      throw new ApiError(400, "Email already in use");
+    }
+  }
+
+  // Check if phone is being changed and if it's already in use
+  if (payload.phone && payload.phone !== user.phone) {
+    const phoneExists = await User.findOne({ phone: payload.phone });
+    if (phoneExists) {
+      throw new ApiError(400, "Phone already in use");
+    }
+  }
+
+  // Update fields
+  if (payload.name) user.name = payload.name;
+  if (payload.email) user.email = payload.email;
+  if (payload.phone) user.phone = payload.phone;
+
+  await user.save();
+
+  // Return user without sensitive data
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  };
+};
+
+export const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const user = await User.findById(userId);
+  if (!user || !user.password) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Verify current password
+  const isValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isValid) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+  user.password = hashedPassword;
+  await user.save();
+
+  return { message: "Password updated successfully" };
+};

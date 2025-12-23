@@ -32,3 +32,18 @@ export const loginWithCodeOnlySchema = z.object({
     code: z.string().min(4, "Login code is required"),
   }),
 });
+
+export const updateProfileSchema = z.object({
+  body: z.object({
+    name: z.string().min(2).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().min(6).optional(),
+  }),
+});
+
+export const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+  }),
+});

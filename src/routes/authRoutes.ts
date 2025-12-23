@@ -4,14 +4,19 @@ import {
   loginWithCodeHandler,
   loginWithCodeOnlyHandler,
   registerAdminHandler,
+  updateProfileHandler,
+  changePasswordHandler,
 } from "@/controllers/authController";
 import {
   loginAdminSchema,
   loginWithCodeSchema,
   loginWithCodeOnlySchema,
   registerAdminSchema,
+  updateProfileSchema,
+  changePasswordSchema,
 } from "@/schemas/authSchemas";
 import { validate } from "@/middleware/validate";
+import { authenticate } from "@/middleware/authMiddleware";
 
 const router = Router();
 
@@ -57,6 +62,34 @@ router.post(
   "/login-code-only",
   validate(loginWithCodeOnlySchema),
   loginWithCodeOnlyHandler
+);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   patch:
+ *     summary: Update admin profile
+ *     tags: [Auth]
+ */
+router.patch(
+  "/profile",
+  authenticate(true),
+  validate(updateProfileSchema),
+  updateProfileHandler
+);
+
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     summary: Change admin password
+ *     tags: [Auth]
+ */
+router.post(
+  "/change-password",
+  authenticate(true),
+  validate(changePasswordSchema),
+  changePasswordHandler
 );
 
 export default router;

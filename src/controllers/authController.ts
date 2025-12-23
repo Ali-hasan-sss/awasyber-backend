@@ -4,6 +4,8 @@ import {
   loginWithCode,
   loginWithCodeOnly,
   registerAdmin,
+  updateProfile,
+  changePassword,
 } from "@/services/authService";
 
 export const registerAdminHandler = async (
@@ -86,6 +88,46 @@ export const loginWithCodeOnlyHandler = async (
         email: user.email,
         role: user.role,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProfileHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return next(new Error("User not authenticated"));
+    }
+    const updatedUser = await updateProfile(userId, req.body);
+    res.json({
+      message: "Profile updated successfully",
+      admin: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePasswordHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return next(new Error("User not authenticated"));
+    }
+    const { currentPassword, newPassword } = req.body;
+    await changePassword(userId, currentPassword, newPassword);
+    res.json({
+      message: "Password changed successfully",
     });
   } catch (error) {
     next(error);
