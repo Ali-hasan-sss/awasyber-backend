@@ -79,7 +79,12 @@ export const listSections = async (
   }
 
   if (filters.serviceId) {
+    // إذا تم تحديد serviceId، جلب الأقسام المرتبطة بهذه الخدمة فقط
     query.serviceId = new Types.ObjectId(filters.serviceId);
+  } else {
+    // إذا لم يتم تحديد serviceId، استبعاد الأقسام المرتبطة بأي خدمة
+    // (لجلب الأقسام العامة فقط)
+    query.$or = [{ serviceId: { $exists: false } }, { serviceId: null }];
   }
 
   if (filters.isActive !== undefined) {
