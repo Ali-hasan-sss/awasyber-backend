@@ -203,6 +203,10 @@ export const getSectionsByPage = async (
   const sections = await Section.find({
     page,
     isActive: true,
+    $or: [
+      { serviceId: { $exists: false } }, // الأقسام التي لا تحتوي على serviceId
+      { serviceId: null }, // الأقسام التي تحتوي على serviceId = null
+    ],
   })
     .sort({ order: 1, createdAt: -1 })
     .lean();
