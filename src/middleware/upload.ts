@@ -44,6 +44,19 @@ const fileFilter = (
     "video/webm",
     "video/ogg",
     "video/x-matroska",
+    // Audio
+    "audio/webm",
+    "audio/webm;codecs=opus",
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/wave",
+    "audio/x-wav",
+    "audio/ogg",
+    "audio/mp4",
+    "audio/x-m4a",
+    "audio/aac",
+    "audio/flac",
     // Documents
     "application/pdf",
     "application/msword",
@@ -59,11 +72,23 @@ const fileFilter = (
     "application/octet-stream", // For files that might not have a specific MIME type
   ];
 
+  // Check exact match first
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
-  } else {
-    cb(new Error(`File type ${file.mimetype} is not allowed`));
+    return;
   }
+
+  // Also check if it's an audio file (for cases like audio/webm;codecs=opus)
+  if (file.mimetype.startsWith("audio/")) {
+    // Extract base audio type (e.g., "audio/webm" from "audio/webm;codecs=opus")
+    const baseAudioType = file.mimetype.split(";")[0];
+    if (allowedMimes.includes(baseAudioType)) {
+      cb(null, true);
+      return;
+    }
+  }
+
+  cb(new Error(`File type ${file.mimetype} is not allowed`));
 };
 
 // Error handler for multer

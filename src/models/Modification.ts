@@ -25,6 +25,7 @@ export interface IModification extends Document {
   extraPaymentAmount?: number;
   costAccepted: boolean;
   attachedFiles?: IModificationFile[]; // الملفات المرفقة (حتى 5 ملفات)
+  audioMessageUrl?: string; // رابط الرسالة الصوتية
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,7 +51,13 @@ const ModificationSchema = new Schema<IModification>(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected", "completed", "needs_extra_payment"],
+      enum: [
+        "pending",
+        "accepted",
+        "rejected",
+        "completed",
+        "needs_extra_payment",
+      ],
       default: "pending",
     },
     extraPaymentAmount: { type: Number, min: 0 },
@@ -63,6 +70,7 @@ const ModificationSchema = new Schema<IModification>(
         fileSize: { type: Number },
       },
     ],
+    audioMessageUrl: { type: String },
   },
   {
     timestamps: true,

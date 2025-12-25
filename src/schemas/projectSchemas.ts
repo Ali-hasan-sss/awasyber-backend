@@ -91,6 +91,7 @@ export const createModificationSchema = z.object({
       .array(modificationFileSchema)
       .max(5, "Maximum 5 files allowed")
       .optional(),
+    audioMessageUrl: z.string().url().optional(),
   }),
 });
 

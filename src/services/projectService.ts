@@ -491,6 +491,7 @@ export interface CreateModificationPayload {
   extraPaymentAmount?: number;
   costAccepted?: boolean;
   attachedFiles?: ModificationFilePayload[];
+  audioMessageUrl?: string;
 }
 
 export const createModification = async (
